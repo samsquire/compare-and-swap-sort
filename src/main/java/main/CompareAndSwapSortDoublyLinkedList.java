@@ -13,7 +13,7 @@ public class CompareAndSwapSortDoublyLinkedList<V> {
     public AtomicReference<CompareAndSwapSortDoublyLinkedList<V>> previous = new AtomicReference<>();
     public AtomicInteger dirty = new AtomicInteger();
     public AtomicInteger claim = new AtomicInteger();
-    public AtomicInteger last_claim = new AtomicInteger(-1);
+    public AtomicInteger last_claim = new AtomicInteger(Integer.MAX_VALUE);
     public List<CompareAndSwapDoublyLinkedListThread> threads = new ArrayList<>();
 
     public CompareAndSwapSortDoublyLinkedList(V value) {
@@ -52,14 +52,14 @@ public class CompareAndSwapSortDoublyLinkedList<V> {
         while (claim.get() > last_claim.get()) {
             // Thread.yield();
             // System.out.println("Trying to get claim");
-            Integer maximum = last_claim.get();
+            Integer minimum = last_claim.get();
             for (CompareAndSwapDoublyLinkedListThread others : threads) {
 
-                if (others.threadId.get() > maximum && others.threadId.get() != Integer.MAX_VALUE) {
-                    maximum = others.threadId.get();
+                if (others.threadId.get() < minimum && others.threadId.get() != Integer.MAX_VALUE) {
+                    minimum = others.threadId.get();
                 }
             }
-            last_claim.set(maximum);
+            last_claim.set(minimum);
         }
         boolean trying = true;
         CompareAndSwapSortDoublyLinkedList<V> newBeginning = new CompareAndSwapSortDoublyLinkedList<V>(value);

@@ -36,7 +36,7 @@ public class DoublyLinkedListWorkerThread extends CompareAndSwapDoublyLinkedList
                         Integer minimum = root.last_claim.get();
                         for (CompareAndSwapDoublyLinkedListThread others : root.threads) {
 
-                            if (others.threadId.get() > minimum && others.threadId.get() != Integer.MAX_VALUE) {
+                            if (others.threadId.get() < minimum && others.threadId.get() != Integer.MAX_VALUE) {
                                 minimum = others.threadId.get();
                             }
                         }
