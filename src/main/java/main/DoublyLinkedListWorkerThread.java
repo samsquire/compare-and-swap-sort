@@ -19,7 +19,7 @@ public class DoublyLinkedListWorkerThread extends CompareAndSwapDoublyLinkedList
         for (int i = 0 ; i < 100; i++) {
             CompareAndSwapSortDoublyLinkedList<OwnedInteger> newBeginning = ll.insertBeginning(this, new OwnedInteger(this, i));
 
-            CompareAndSwapSortDoublyLinkedList<OwnedInteger> current = newBeginning;
+            CompareAndSwapSortDoublyLinkedList<OwnedInteger> current = ll;
 
                 List<OwnedInteger> current_run = new ArrayList<>();
                 boolean finished = false;
@@ -28,19 +28,29 @@ public class DoublyLinkedListWorkerThread extends CompareAndSwapDoublyLinkedList
                     while (current.root.get().isDirty()) { // we need to restart
 
                     }
-                    root.setDirty();
+
                     root.claim(this);
-                    while (root.claim.get() > root.last_claim.get()) {
+                    root.setDirty();
+                    boolean waitingForTurn = true;
+                    while (waitingForTurn) {
 
-                        // System.out.println("Trying to get claim");
-                        Integer minimum = root.last_claim.get();
-                        for (CompareAndSwapDoublyLinkedListThread others : root.threads) {
+                        while (root.claim.get() > root.last_claim.get()) {
+                            Integer originalMinimum = root.last_claim.get();
+                            // System.out.println("Trying to get claim");
+                            Integer minimum = root.last_claim.get();
+                            for (CompareAndSwapDoublyLinkedListThread others : root.threads) {
 
-                            if (others.threadId.get() < minimum && others.threadId.get() != Integer.MAX_VALUE) {
-                                minimum = others.threadId.get();
+                                if (others.threadId.get() > minimum && others.threadId.get() != Integer.MAX_VALUE) {
+                                    minimum = others.threadId.get();
+                                }
                             }
+                            if (!root.last_claim.compareAndSet(originalMinimum, minimum)) {
+
+                                continue;
+                            }
+
                         }
-                        root.last_claim.set(minimum);
+                        waitingForTurn = false;
                     }
 
                     while (current != null) {
