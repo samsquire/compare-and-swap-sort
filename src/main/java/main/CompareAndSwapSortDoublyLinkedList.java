@@ -52,6 +52,7 @@ public class CompareAndSwapSortDoublyLinkedList<V> {
         newBeginning.root.set(this);
         int thisClaim = claim.get();
         while (waitingForTurn) {
+
             while (isDirty()) {
                 // Thread.yield();
                 // System.out.println("Root is dirty");
@@ -59,6 +60,7 @@ public class CompareAndSwapSortDoublyLinkedList<V> {
 
             claim(thread);
             setDirty();
+
             // System.out.printf("Waiting for a turn");
 
             while (thisClaim > last_claim.get() || last_claim.get() == Integer.MAX_VALUE) {
@@ -88,24 +90,33 @@ public class CompareAndSwapSortDoublyLinkedList<V> {
 
 
             CompareAndSwapSortDoublyLinkedList<V> originalNext = next.get();
+            newBeginning.next.set(originalNext);
             CompareAndSwapSortDoublyLinkedList<V> originalPrevious = null;
             if (originalNext != null) {
-                if (!next.compareAndSet(originalNext, newBeginning)) {
 
-                    continue;
-                }
 
                 originalPrevious = originalNext.previous.get();
                 if (!originalNext.previous.compareAndSet(originalPrevious, newBeginning)) {
                     // System.out.println("Race 1");
+
+                    continue;
+                }
+                if (!next.compareAndSet(originalNext, newBeginning)) {
                     continue;
                 }
 
+
+            } else {
+                if (!next.compareAndSet(originalNext, newBeginning)) {
+                    continue;
+                }
             }
 
 
 
-            newBeginning.next.set(originalNext);
+
+
+
             waitingForTurn = false;
         }
 

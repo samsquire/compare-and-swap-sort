@@ -90,6 +90,7 @@ public class DoublyLinkedListWorkerThread extends CompareAndSwapDoublyLinkedList
         for (List<OwnedInteger> run : runs) {
             Collections.reverse(run);
             int previous = -1;
+
             for (OwnedInteger current : run) {
 
                 if (current.thread == this) {
