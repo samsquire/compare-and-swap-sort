@@ -20,23 +20,41 @@ public class DoublyLinkedListWorkerThread extends CompareAndSwapDoublyLinkedList
             CompareAndSwapSortDoublyLinkedList<OwnedInteger> newBeginning = ll.insertBeginning(this, new OwnedInteger(this, i));
 
             CompareAndSwapSortDoublyLinkedList<OwnedInteger> current = newBeginning;
-            List<OwnedInteger> current_run = new ArrayList<>();
-            boolean finished = false;
-            while (!finished) {
-                while (current != null) {
-                    if (current.root.get().isDirty()) { // we need to restart
-                        current = root;
-                        current_run.clear();
-                        break;
+
+                List<OwnedInteger> current_run = new ArrayList<>();
+                boolean finished = false;
+                while (!finished) {
+
+                    while (current.root.get().isDirty()) { // we need to restart
+
                     }
-                    current_run.add(current.value);
-                    current = current.next.get();
-                    if (current == null) {
-                        finished = true;
+                    root.setDirty();
+                    root.claim(this);
+                    while (root.claim.get() > root.last_claim.get()) {
+
+                        // System.out.println("Trying to get claim");
+                        Integer minimum = root.last_claim.get();
+                        for (CompareAndSwapDoublyLinkedListThread others : root.threads) {
+
+                            if (others.threadId.get() > minimum && others.threadId.get() != Integer.MAX_VALUE) {
+                                minimum = others.threadId.get();
+                            }
+                        }
+                        root.last_claim.set(minimum);
+                    }
+
+                    while (current != null) {
+
+
+                        current_run.add(current.value);
+                        current = current.next.get();
+                        if (current == null) {
+                            finished = true;
+                            root.unclaim();
+                        }
                     }
                 }
-            }
-            runs.add(current_run);
+                runs.add(current_run);
 
 
         }

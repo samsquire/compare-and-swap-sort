@@ -13,7 +13,7 @@ public class CompareAndSwapSortDoublyLinkedList<V> {
     public AtomicReference<CompareAndSwapSortDoublyLinkedList<V>> previous = new AtomicReference<>();
     public AtomicInteger dirty = new AtomicInteger();
     public AtomicInteger claim = new AtomicInteger();
-    public AtomicInteger last_claim = new AtomicInteger(Integer.MAX_VALUE);
+    public AtomicInteger last_claim = new AtomicInteger(-1);
     public List<CompareAndSwapDoublyLinkedListThread> threads = new ArrayList<>();
 
     public CompareAndSwapSortDoublyLinkedList(V value) {
@@ -36,31 +36,36 @@ public class CompareAndSwapSortDoublyLinkedList<V> {
     }
 
     public void claim(CompareAndSwapDoublyLinkedListThread thread) {
-        claim.set(idGenerator.incrementAndGet());
+        int nextId = idGenerator.incrementAndGet();
+        claim.set(nextId);
+        thread.threadId.set(nextId);
     }
 
     public CompareAndSwapSortDoublyLinkedList<V> insertBeginning(CompareAndSwapDoublyLinkedListThread thread, V value) {
         while (isDirty()) {
-            Thread.yield();
+            // Thread.yield();
             // System.out.println("Root is dirty");
         }
-        claim(thread);
         setDirty();
+        claim(thread);
+        // System.out.println(String.format("%d %d", claim.get(), last_claim.get()));
         while (claim.get() > last_claim.get()) {
-            Thread.yield();
-            System.out.println("Trying to get claim");
-            Integer minimum = last_claim.get();
+            // Thread.yield();
+            // System.out.println("Trying to get claim");
+            Integer maximum = last_claim.get();
             for (CompareAndSwapDoublyLinkedListThread others : threads) {
-                if (others.threadId.get() < minimum) {
-                    minimum = others.threadId.get();
+
+                if (others.threadId.get() > maximum && others.threadId.get() != Integer.MAX_VALUE) {
+                    maximum = others.threadId.get();
                 }
             }
-            last_claim.set(minimum);
+            last_claim.set(maximum);
         }
         boolean trying = true;
         CompareAndSwapSortDoublyLinkedList<V> newBeginning = new CompareAndSwapSortDoublyLinkedList<V>(value);
         newBeginning.root.set(this);
         while (trying) {
+
             CompareAndSwapSortDoublyLinkedList<V> originalNext = next.get();
             CompareAndSwapSortDoublyLinkedList<V> originalPrevious = previous.get();
             if (originalPrevious != null) {
@@ -75,10 +80,14 @@ public class CompareAndSwapSortDoublyLinkedList<V> {
             newBeginning.next.set(originalNext);
             trying = false;
         }
-        root.get().dirty.set(0);
+        unclaim();
         thread.threadId.set(Integer.MAX_VALUE);
 
         return newBeginning;
+    }
+
+    public void unclaim() {
+        root.get().dirty.set(0);
     }
 
 
