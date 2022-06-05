@@ -5,4 +5,4 @@ This algorithm has 100 threads that concurrently try insert a number into a doub
 
 There is a lot of contention, as you can only read the linked list if you have a claim on it. You can only write to the linked list if you have a claim.
 
-On my 6 core machine it tskes under 500milliseconds.
+On my 6 core machine it takes under 500milliseconds.
